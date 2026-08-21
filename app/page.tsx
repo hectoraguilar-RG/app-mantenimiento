@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
-
 import { supabase } from '../lib/supabase';
 import { 
   Wrench, 
@@ -64,7 +63,6 @@ interface Tarea {
   created_at: string;
 }
 
-// Utilidad para obtener número de semana
 function obtenerNumeroSemana(fecha: Date): number {
   const d = new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -73,7 +71,6 @@ function obtenerNumeroSemana(fecha: Date): number {
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-// Obtener el lunes de la semana en curso
 function obtenerInicioSemanaActual(): Date {
   const d = new Date();
   const day = d.getDay();
@@ -90,17 +87,14 @@ export default function AppMantenimiento() {
   const [cargando, setCargando] = useState(true);
   const [pestañaActiva, setPestañaActiva] = useState<'operacion' | 'ejecutivo'>('operacion');
 
-  // Filtros
   const [filtroEstado, setFiltroEstado] = useState<'todas' | 'pendientes' | 'en_proceso' | 'bloqueadas' | 'completadas'>('todas');
   const [tipoPeriodoReporte, setTipoPeriodoReporte] = useState<'semanal' | 'quincenal' | 'mensual'>('semanal');
 
-  // Modales
   const [modalExpres, setModalExpres] = useState(false);
   const [modalBloqueo, setModalBloqueo] = useState<Tarea | null>(null);
   const [motivoBloqueo, setMotivoBloqueo] = useState('falta_material');
   const [detalleBloqueo, setDetalleBloqueo] = useState('');
 
-  // Cierre y Avance
   const [modalTerminar, setModalTerminar] = useState<Tarea | null>(null);
   const [notasCierre, setNotasCierre] = useState('');
   const [fotoAntes, setFotoAntes] = useState<string | null>(null);
@@ -114,7 +108,6 @@ export default function AppMantenimiento() {
   const [reasignarA, setReasignarA] = useState('');
   const [guardandoAvance, setGuardandoAvance] = useState(false);
 
-  // Formulario Asignación
   const hoyStr = new Date().toISOString().split('T')[0];
   const [nuevaTarea, setNuevaTarea] = useState({
     titulo: '',
@@ -125,7 +118,6 @@ export default function AppMantenimiento() {
     tecnicos_seleccionados: [] as string[]
   });
 
-  // Formulario Exprés
   const [tareaExpres, setTareaExpres] = useState({
     ubicacion: '',
     descripcion: '',
@@ -166,9 +158,6 @@ export default function AppMantenimiento() {
       if (usuarioActual.rol === 'admin') {
         setTareas(data);
       } else {
-        // LIMPIEZA PARA TÉCNICOS:
-        // Solo ven tareas completadas si corresponden a la semana actual (desde el lunes reciente).
-        // Las de semanas anteriores no se les muestran para no saturar su pantalla.
         const inicioSemana = obtenerInicioSemanaActual();
         const hoy = new Date().toISOString().split('T')[0];
 
@@ -176,7 +165,6 @@ export default function AppMantenimiento() {
           const fechaTarea = new Date(t.fecha_completada || t.fecha_programada);
           const esDeEstaSemana = fechaTarea >= inicioSemana;
 
-          // Si está completada pero es vieja, se oculta para el técnico
           if (t.estado === 'completada' && !esDeEstaSemana) {
             return false;
           }
@@ -363,7 +351,6 @@ export default function AppMantenimiento() {
     });
   }
 
-  // Filtrado de Tareas Operativas
   const tareasFiltradas = tareas.filter(t => {
     if (filtroEstado === 'pendientes') return t.estado === 'pendiente';
     if (filtroEstado === 'en_proceso') return t.estado === 'en_proceso';
@@ -372,7 +359,6 @@ export default function AppMantenimiento() {
     return true;
   });
 
-  // FILTRADO DINÁMICO PARA EL REPORTE (Semanal / Quincenal / Mensual)
   const fechaActual = new Date();
   const numeroSemana = obtenerNumeroSemana(fechaActual);
 
@@ -388,12 +374,10 @@ export default function AppMantenimiento() {
       dias15Atras.setDate(ahora.getDate() - 15);
       return fechaRef >= dias15Atras;
     } else {
-      // Mensual: mes en curso
       return fechaRef.getMonth() === ahora.getMonth() && fechaRef.getFullYear() === ahora.getFullYear();
     }
   });
 
-  // Métricas del Reporte
   const totalCompletadasRep = tareasReporte.filter(t => t.estado === 'completada').length;
   const totalExpresRep = tareasReporte.filter(t => t.tipo_origen === 'en_recorrido').length;
   const totalBloqueadasRep = tareasReporte.filter(t => t.estado === 'bloqueada').length;
@@ -429,7 +413,6 @@ export default function AppMantenimiento() {
     }]
   };
 
-  // Texto del Encabezado Formal del Reporte
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const etiquetaPeriodo = tipoPeriodoReporte === 'semanal' 
     ? `Reporte Semanal • Semana ${numeroSemana} (${meses[fechaActual.getMonth()]} ${fechaActual.getFullYear()})`
@@ -439,7 +422,6 @@ export default function AppMantenimiento() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 pb-28 font-sans">
-      {/* HEADER DE LA APP */}
       <header className="bg-slate-900 text-white sticky top-0 z-30 shadow-md p-4 print:hidden">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2">
@@ -496,7 +478,6 @@ export default function AppMantenimiento() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* ======================= VISTA OPERATIVA ======================= */}
         {pestañaActiva === 'operacion' && (
           <>
             {usuarioActual?.rol === 'admin' && (
@@ -712,11 +693,9 @@ export default function AppMantenimiento() {
           </>
         )}
 
-        {/* ======================= VISTA EJECUTIVA & REPORTE FORMAL ======================= */}
+        {/* PANEL EJECUTIVO */}
         {pestañaActiva === 'ejecutivo' && (
           <section className="space-y-6">
-            
-            {/* Barra de Filtro de Período y Botón de Impresión */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
@@ -757,7 +736,6 @@ export default function AppMantenimiento() {
               </div>
             </div>
 
-            {/* Tarjetas de Métricas */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <p className="text-xs text-slate-500 font-medium">Tareas Concluidas</p>
@@ -781,7 +759,6 @@ export default function AppMantenimiento() {
               </div>
             </div>
 
-            {/* Gráficas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="font-bold text-xs text-slate-700 mb-4 flex items-center gap-2 uppercase tracking-wide">
@@ -802,7 +779,6 @@ export default function AppMantenimiento() {
               </div>
             </div>
 
-            {/* Listado de Evidencias y Tareas Concluidas en el Período */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="font-bold text-xs text-slate-700 mb-3 uppercase tracking-wide">
                 Desglose de Trabajos Concluidos con Evidencia ({totalCompletadasRep})
@@ -853,7 +829,6 @@ export default function AppMantenimiento() {
                 </table>
               </div>
             </div>
-
           </section>
         )}
       </main>
